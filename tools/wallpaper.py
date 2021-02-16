@@ -80,11 +80,9 @@ def setwallpaper(image_path, relative_path=True):
                     + image_path + "')"])
         else:
             if desktop:
-                return f"Sorry, {desktop} is currently not supported.",
-                False
+                return f"Sorry, {desktop} is currently not supported.", False
             else:
-                return "Sorry, Desktop Environment could not be detected",
-                False
+                return "Sorry, Desktop Environment could not be detected", False
     elif "darwin" in host:
         db_file = "Library/Application Support/Dock/desktoppicture.db"
         db_path = os.path.join(
