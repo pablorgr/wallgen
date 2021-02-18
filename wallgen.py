@@ -2,6 +2,8 @@ import sys
 import time
 import click
 import numpy as np
+from inspect import getmembers
+from random import choice, getrandbits, randint
 from skimage import color
 from tools.wallpaper import setwallpaper
 from tools.points import (
@@ -23,6 +25,15 @@ from tools.shapes import (
     genTriangle)
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+def _get_bool():
+    return bool(getrandbits(1))
+
+
+def _generate_hex():
+    """ Returns random HEX color """
+    return '#' + hex(randint(10000000, 16777215))[2:]
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -52,6 +63,8 @@ def cli():
                no antialiasing. [WARNING: Very memory expensive]""")
 @click.option("--set-wall", "-w", is_flag=True,
               help="Set the generated image as your Desktop wallpaper")
+@click.option("--random", "-r", is_flag=True,
+              help="Generate random image")
 def poly(
         side,
         points,
@@ -63,22 +76,35 @@ def poly(
         use_nn,
         swirl,
         scale,
-        set_wall):
+        set_wall,
+        random):
     """ Generates a HQ low poly image using a gradient """
 
-    error = ""
-    if side < 50:
-        error = "Image too small. Minimum size 50"
-    elif points < 3:
-        error = "Too less points. Minimum points 3"
-    elif points > 200000:
-        error = "Too many points. Maximum points 200000"
-    elif scale < 1:
-        error = "Invalid scale value"
+    if random:
+        if _get_bool():
+            print("\r", end="")
+            print("Generating random colors")
+            colors = [_generate_hex() for _ in range(randint(2, 200))]
+        points = randint(3, 200)
+        outline = _generate_hex()
+        only_color = _get_bool()
+        use_nn = _get_bool()
+        swirl = randint(1, 10)
+        scale = randint(1, 2)
+    else:
+        error = ""
+        if side < 50:
+            error = "Image too small. Minimum size 50"
+        elif points < 3:
+            error = "Too less points. Minimum points 3"
+        elif points > 200000:
+            error = "Too many points. Maximum points 200000"
+        elif scale < 1:
+            error = "Invalid scale value"
 
-    if error:
-        click.secho(error, fg='red', err=True)
-        sys.exit(1)
+        if error:
+            click.secho(error, fg='red', err=True)
+            sys.exit(1)
 
     side = side * scale  # increase size to anti alias
 
@@ -181,6 +207,8 @@ def poly(
                no antialiasing. [WARNING: Very memory expensive]""")
 @click.option("--set-wall", "-w", is_flag=True,
               help="Set the generated image as your Desktop wallpaper")
+@click.option("--random", "-r", is_flag=True,
+              help="Generate random image")
 def shape(
         side,
         shape,
@@ -192,19 +220,31 @@ def shape(
         use_nn,
         swirl,
         scale,
-        set_wall):
+        set_wall,
+        random):
     """ Generates a HQ image of a beautiful shapes """
 
-    error = ""
-    if side < 50:
-        error = "Image too small. Minimum size 50"
-    if percent is not None:
-        if percent < 1 or percent > 10:
-            error = "Error {} : Percent range 1-10".format(percent)
+    if random:
+        if _get_bool():
+            print("\r", end="")
+            print("Generating random colors")
+            colors = [_generate_hex() for _ in range(randint(2, 200))]
+        shape = choice(["sq", "hex", "dia", "tri", "iso"])
+        percent = randint(1, 10)
+        outline = _generate_hex()
+        use_nn = _get_bool()
+        swirl = randint(1, 10)
+    else:
+        error = ""
+        if side < 50:
+            error = "Image too small. Minimum size 50"
+        if percent is not None:
+            if percent < 1 or percent > 10:
+                error = "Error {} : Percent range 1-10".format(percent)
 
-    if error:
-        click.secho(error, fg='red', err=True)
-        sys.exit(1)
+        if error:
+            click.secho(error, fg='red', err=True)
+            sys.exit(1)
 
     side = side * scale  # increase size to anti alias
 
@@ -285,9 +325,13 @@ def shape(
               help="Swirl the gradient. [1-10]")
 @click.option("--set-wall", "-w", is_flag=True,
               help="Set the generated image as your Desktop wallpaper")
-def slants(side, show, name, swirl, set_wall):
+@click.option("--random", "-r", is_flag=True,
+              help="Generate random image")
+def slants(side, show, name, swirl, set_wall, random):
     """ Generates slanting lines of various colors """
 
+    if random:
+        swirl = randint(1, 10)
     scale = 2
     side = side * scale  # increase size to anti alias
     print("Preparing image", end="")
@@ -340,24 +384,30 @@ def pic():
 @click.option("--smart", "-sm", is_flag=True, help="Use smart points")
 @click.option("--set-wall", "-w", is_flag=True,
               help="Set the generated image as your Desktop wallpaper")
-def poly(image, points, show, outline, name, smart, set_wall):  # noqa: F811
+@click.option("--random", "-r", is_flag=True,
+              help="Generate random image")
+def poly(image, points, show, outline, name, smart, set_wall, random):  # noqa: F811
     """ Generates a HQ low poly image """
 
-    if points < 3:
-        error = "Too less points. Minimum points 3"
-    elif points > 200000:
-        error = "Too many points. Maximum points {}".format(200000)
+    if random:
+        outline = _generate_hex()
+        smart = _get_bool()
     else:
-        error = None
+        if points < 3:
+            error = "Too less points. Minimum points 3"
+        elif points > 200000:
+            error = "Too many points. Maximum points {}".format(200000)
+        else:
+            error = None
 
-    if error:
-        click.secho(error, fg='red', err=True)
-        sys.exit(1)
+        if error:
+            click.secho(error, fg='red', err=True)
+            sys.exit(1)
 
-    # wshift = img.width//10
-    # hshift = img.height//10
-    # width += wshift*1
-    # height += hshift*2
+        # wshift = img.width//10
+        # hshift = img.height//10
+        # width += wshift*1
+        # height += hshift*2
 
     if outline:
         try:
@@ -445,16 +495,24 @@ def poly(image, points, show, outline, name, smart, set_wall):  # noqa: F811
               help="Rename the output")
 @click.option("--set-wall", "-w", is_flag=True,
               help="Set the generated image as your Desktop wallpaper")
-def shape(image, shape, show, outline, name, percent, set_wall):  # noqa: F811
+@click.option("--random", "-r", is_flag=True,
+              help="Generate random image")
+def shape(image, shape, show, outline, name, percent, set_wall, random):  # noqa: F811
     """ Generate a HQ image of a beautiful shapes """
-    error = None
-    if percent:
-        if percent < 1 or percent > 10:
-            error = "Percent range 1-10"
 
-    if error:
-        click.secho(error, fg='red', err=True)
-        sys.exit(1)
+    if random:
+        shape = choice(["sq", "hex", "dia", "tri", "iso"])
+        percent = randint(1, 10)
+        outline = _generate_hex()
+    else:
+        error = None
+        if percent:
+            if percent < 1 or percent > 10:
+                error = "Percent range 1-10"
+
+        if error:
+            click.secho(error, fg='red', err=True)
+            sys.exit(1)
 
     img = Image.open(image)
 
